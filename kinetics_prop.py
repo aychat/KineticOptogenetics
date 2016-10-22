@@ -2,9 +2,6 @@ from types import MethodType, FunctionType
 from scipy.integrate import ode, odeint, simps
 from scipy import linalg
 import numpy as np
-from Pr_ODE_solver import Pr_ODE, Pr_ODE_jacobian
-from Pfr_ODE_solver import Pfr_ODE, Pfr_ODE_jacobian
-import matplotlib.pyplot as plt
 
 
 class KineticsProp:
@@ -174,15 +171,16 @@ class KineticsProp:
             [self.propagate(self.G0, self.V_pump, self.V_dump, e)[-1] for e in np.eye(10)]
         )
 
-        print M.sum(axis=0)
+        # print M.sum(axis=0)
 
         np.set_printoptions(precision=2, suppress=True)
-        print M
+        # print M
 
         vals, vecs = linalg.eig(M)
 
         v = vecs[:, np.abs(vals - 1).argmin()]
-        print v.real / v.real.sum()
+        #print v.real / v.real.sum()
+        return v[5].real / v.real.sum()
 
 ####################################################################################################
 #
@@ -212,15 +210,15 @@ if __name__=='__main__':
         A_23=1 / .150,
         A_35=1 / 68.5,
         A_34=2.5 / 68.5,
-        A_56=1 / 10.,
+        A_56=1 / 0.01,
 
         A_96=1 / .050,
         A_78=1 / .050,
         A_810=1 / 2.5,
         A_89=2.0,
-        A_101=1 / 10.,
+        A_101=1 / 0.01,
 
         Iterations=51,
     )(
-        (0.25, 0.0, .100, .150, 0.5, 0.5251)
+        (0.25, 2.0, .100, .150, 0.5, 0.5251)
     )
