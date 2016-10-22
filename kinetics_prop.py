@@ -6,6 +6,7 @@ from Pr_ODE_solver import Pr_ODE, Pr_ODE_jacobian
 from Pfr_ODE_solver import Pfr_ODE, Pfr_ODE_jacobian
 import matplotlib.pyplot as plt
 
+
 class KineticsProp:
     """
     Propagation of kinetic equations
@@ -79,9 +80,10 @@ class KineticsProp:
             """
             return jac(p, t).dot(p)
 
-        #prop = ode(rhs, jac)
-        #prop.set_initial_value(p0, 0.0)
-        #return prop.integrate(self.T_max)
+        # prop = ode(rhs, jac)
+        # prop.set_initial_value(p0, 0.0)
+        # return prop.integrate(self.T_max)
+
         return odeint(rhs, p0, self.t_axis, Dfun=jac)
 
     def __call__(self, parameters):
@@ -104,87 +106,73 @@ class KineticsProp:
         pump_spectra *= scale_pump
         dump_spectra *= scale_dump
 
-        K_Pr_12_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pr_abs / self.beam_area, self.lamb)
-        K_Pr_12_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pr_abs / self.beam_area, self.lamb)
+        K_12_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pr_abs / self.beam_area, self.lamb)
+        K_12_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pr_abs / self.beam_area, self.lamb)
 
-        K_Pr_34_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pr_ems / self.beam_area, self.lamb)
-        K_Pr_34_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pr_ems / self.beam_area, self.lamb)
+        K_34_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pr_ems / self.beam_area, self.lamb)
+        K_34_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pr_ems / self.beam_area, self.lamb)
 
-        K_Pfr_12_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pfr_abs / self.beam_area, self.lamb)
-        K_Pfr_12_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pfr_abs / self.beam_area, self.lamb)
+        K_67_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pfr_abs / self.beam_area, self.lamb)
+        K_67_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pfr_abs / self.beam_area, self.lamb)
 
-        K_Pfr_34_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pfr_ems / self.beam_area, self.lamb)
-        K_Pfr_34_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pfr_ems / self.beam_area, self.lamb)
+        K_89_pump = simps(1.92e-9 * pump_spectra * self.lamb * self.Pfr_ems / self.beam_area, self.lamb)
+        K_89_dump = simps(1.92e-9 * dump_spectra * self.lamb * self.Pfr_ems / self.beam_area, self.lamb)
 
 
         ###############################################################################
 
-        self.G0_Pr = np.zeros([5, 5])
+        self.G0 = np.zeros([10, 10])
 
-        self.G0_Pr[0, 3] = self.A_41_Pr
-        self.G0_Pr[1, 1] = -self.A_23_Pr
-        self.G0_Pr[2, 1] = self.A_23_Pr
-        self.G0_Pr[2, 2] = -self.A_34_Pr-self.A_35_Pr
-        self.G0_Pr[3, 2] = self.A_34_Pr
-        self.G0_Pr[3, 3] = -self.A_41_Pr
-        self.G0_Pr[4, 2] = self.A_35_Pr
+        self.G0[0, 3] = self.A_41
+        self.G0[0, 9] = self.A_101
+        self.G0[1, 1] = -self.A_23
+        self.G0[2, 1] = self.A_23
+        self.G0[2, 2] = -self.A_34-self.A_35
+        self.G0[3, 2] = self.A_34
+        self.G0[3, 3] = -self.A_41
+        self.G0[4, 2] = self.A_35
+        self.G0[4, 4] = -self.A_56
+        self.G0[5, 4] = self.A_56
+        self.G0[5, 8] = self.A_96
+        self.G0[6, 6] = -self.A_78
+        self.G0[7, 6] = self.A_78
+        self.G0[7, 7] = -self.A_89 - self.A_810
+        self.G0[8, 7] = self.A_89
+        self.G0[8, 8] = -self.A_96
+        self.G0[9, 7] = self.A_810
+        self.G0[9, 9] = -self.A_101
 
-        self.G0_Pfr = np.zeros_like(self.G0_Pr)
+        self.V_pump = np.zeros_like(self.G0)
+        self.V_dump = np.zeros_like(self.G0)
 
-        self.G0_Pfr[0, 3] = self.A_41_Pfr
-        self.G0_Pfr[1, 1] = -self.A_23_Pfr
-        self.G0_Pfr[2, 1] = self.A_23_Pfr
-        self.G0_Pfr[2, 2] = -self.A_34_Pfr - self.A_35_Pfr
-        self.G0_Pfr[3, 2] = self.A_34_Pfr
-        self.G0_Pfr[3, 3] = -self.A_41_Pfr
-        self.G0_Pfr[4, 2] = self.A_35_Pfr
+        self.V_pump[0, 1] = self.V_pump[1, 0] = K_12_pump
+        self.V_pump[0, 0] = self.V_pump[1, 1] = -K_12_pump
+        self.V_pump[2, 2] = self.V_pump[3, 3] = -K_34_pump
+        self.V_pump[2, 3] = self.V_pump[3, 2] = K_34_pump
 
-        self.V_Pr_pump = np.zeros_like(self.G0_Pr)
+        self.V_pump[5, 6] = self.V_pump[6, 5] = K_67_pump
+        self.V_pump[5, 5] = self.V_pump[6, 6] = -K_67_pump
+        self.V_pump[7, 7] = self.V_pump[8, 8] = -K_89_pump
+        self.V_pump[7, 8] = self.V_pump[8, 7] = K_89_pump
 
-        self.V_Pr_pump[0, 1] = self.V_Pr_pump[1, 0] = K_Pr_12_pump
-        self.V_Pr_pump[0, 0] = self.V_Pr_pump[1, 1] = -K_Pr_12_pump
-        self.V_Pr_pump[2, 2] = self.V_Pr_pump[3, 3] = -K_Pr_34_pump
-        self.V_Pr_pump[2, 3] = self.V_Pr_pump[3, 2] = K_Pr_34_pump
+        self.V_dump[0, 1] = self.V_dump[1, 0] = K_12_dump
+        self.V_dump[0, 0] = self.V_dump[1, 1] = -K_12_dump
+        self.V_dump[2, 2] = self.V_dump[3, 3] = -K_34_dump
+        self.V_dump[2, 3] = self.V_dump[3, 2] = K_34_dump
 
-        self.V_Pr_dump = np.zeros_like(self.G0_Pr)
-
-        self.V_Pr_dump[0, 1] = self.V_Pr_dump[1, 0] = K_Pr_12_dump
-        self.V_Pr_dump[0, 0] = self.V_Pr_dump[1, 1] = -K_Pr_12_dump
-        self.V_Pr_dump[2, 2] = self.V_Pr_dump[3, 3] = -K_Pr_34_dump
-        self.V_Pr_dump[2, 3] = self.V_Pr_dump[3, 2] = K_Pr_34_dump
-
-        self.V_Pfr_pump = np.zeros_like(self.G0_Pr)
-
-        self.V_Pfr_pump[0, 1] = self.V_Pfr_pump[1, 0] = K_Pfr_12_pump
-        self.V_Pfr_pump[0, 0] = self.V_Pfr_pump[1, 1] = -K_Pfr_12_pump
-        self.V_Pfr_pump[2, 2] = self.V_Pfr_pump[3, 3] = -K_Pfr_34_pump
-        self.V_Pfr_pump[2, 3] = self.V_Pfr_pump[3, 2] = K_Pfr_34_pump
-
-        self.V_Pfr_dump = np.zeros_like(self.G0_Pfr)
-
-        self.V_Pfr_dump[0, 1] = self.V_Pfr_dump[1, 0] = K_Pfr_12_dump
-        self.V_Pfr_dump[0, 0] = self.V_Pfr_dump[1, 1] = -K_Pfr_12_dump
-        self.V_Pfr_dump[2, 2] = self.V_Pfr_dump[3, 3] = -K_Pfr_34_dump
-        self.V_Pfr_dump[2, 3] = self.V_Pfr_dump[3, 2] = K_Pfr_34_dump
+        self.V_dump[5, 6] = self.V_dump[6, 5] = K_67_dump
+        self.V_dump[5, 5] = self.V_dump[6, 6] = -K_67_dump
+        self.V_dump[7, 7] = self.V_dump[8, 8] = -K_89_dump
+        self.V_dump[7, 8] = self.V_dump[8, 7] = K_89_dump
 
         ###############################################################################
         #
         #   Transfer matrix construction
         #
         ###############################################################################
-        M_Pr = np.transpose(
-            [self.propagate(self.G0_Pr, self.V_Pr_pump, self.V_Pr_dump, e)[-1] for e in np.eye(5)]
+        M = np.transpose(
+            [self.propagate(self.G0, self.V_pump, self.V_dump, e)[-1] for e in np.eye(10)]
         )
-
-        M_Pfr = np.transpose(
-            [self.propagate(self.G0_Pfr, self.V_Pfr_pump, self.V_Pfr_dump, e)[-1] for e in np.eye(5)]
-        )
-
-        M = linalg.block_diag(M_Pr, M_Pfr)
-        M[4, 5] = M[4, 4]
-        M[4, 4] = 0
-        M[9, 0] = M[9, 9]
-        M[9, 9] = 0
 
         print M.sum(axis=0)
 
@@ -217,18 +205,20 @@ if __name__=='__main__':
 
         beam_diameter=200.,
 
-        T_max=3.5,
+        T_max=100.0,
         T_steps=1000,
 
-        A_41_Pr=1 / .150,
-        A_23_Pr=1 / .150,
-        A_35_Pr=1 / 68.5,
-        A_34_Pr=2.5 / 68.5,
+        A_41=1 / .150,
+        A_23=1 / .150,
+        A_35=1 / 68.5,
+        A_34=2.5 / 68.5,
+        A_56=1 / 10.,
 
-        A_41_Pfr=1 / .050,
-        A_23_Pfr=1 / .050,
-        A_35_Pfr=1 / 2.5,
-        A_34_Pfr=2.0,
+        A_96=1 / .050,
+        A_78=1 / .050,
+        A_810=1 / 2.5,
+        A_89=2.0,
+        A_101=1 / 10.,
 
         Iterations=51,
     )(

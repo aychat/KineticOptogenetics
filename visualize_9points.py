@@ -35,7 +35,7 @@ for axis in itertools.combinations(range(6), 4):
 
     plt.clf()
     plt.imshow(
-        scan.max(axis=axis),
+        np.nanmax(scan, axis=axis),
         origin='lower',
         interpolation='nearest',
         extent=[x_min, x_max, y_min, y_max],
