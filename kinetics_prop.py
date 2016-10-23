@@ -77,10 +77,6 @@ class KineticsProp:
             """
             return jac(p, t).dot(p)
 
-        # prop = ode(rhs, jac)
-        # prop.set_initial_value(p0, 0.0)
-        # return prop.integrate(self.T_max)
-
         return odeint(rhs, p0, self.t_axis, Dfun=jac)
 
     def __call__(self, parameters):
@@ -97,8 +93,8 @@ class KineticsProp:
         I_pump = self.I_pump(t_axis)
         I_dump = self.I_dump(t_axis)
 
-        scale_pump = 10e6 * pump_energy / simps(I_pump, t_axis) # ASK ZAK
-        scale_dump = 10e6 * dump_energy / simps(I_dump, t_axis)
+        scale_pump = 10.e6 * pump_energy / simps(I_pump, t_axis)  # ASK ZAK
+        scale_dump = 10.e6 * dump_energy / simps(I_dump, t_axis)
 
         pump_spectra *= scale_pump
         dump_spectra *= scale_dump
